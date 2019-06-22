@@ -1,0 +1,55 @@
+import socket
+import threading
+ 
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+sock.bind(('10.9.144.166', 5650))
+ 
+sock.listen(5)
+print('Server', socket.gethostbyname('10.9.144.166'), 'listening ...')
+ 
+mydict = dict()
+mylist = list()
+
+def subThreadIn(myconnection, connNumber):
+    #mylist.append(myconnection)
+    while True:
+        try:
+            recvedMsg = myconnection.recv(1024).decode()
+            if recvedMsg=='1010': #password
+                print(recvedMsg)
+                recvedData = myconnection.recv(1024).decode()
+                print(recvedData)
+                if recvedData:
+                    print('Succuess get')
+                    connection.send('Accept'.encode())
+            else:
+                sock.send('quit'.encode())
+        except (OSError, ConnectionResetError):
+            try:
+                mylist.remove(myconnection)
+            except:
+                pass
+            print(connection.fileno(),'Client left')
+            myconnection.shutdown(2)
+            myconnection.close()
+            return
+ 
+while True:
+    connection, addr = sock.accept()
+    print('Accept a new connection', connection.getsockname(), connection.fileno())
+    try:
+        #connection.settimeout(5)
+        buf = connection.recv(1024).decode()
+        if buf:
+            connection.send(b'Welcome to Server!')
+ 
+            #為當前連結開啟一個新的執行緒
+            mythread = threading.Thread(target=subThreadIn, args=(connection, connection.fileno()))
+            mythread.setDaemon(True)
+            mythread.start()           
+        else:
+            connection.send(b'please go out!')
+            connection.close()
+    except :  
+        pass
