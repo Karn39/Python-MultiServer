@@ -1,0 +1,48 @@
+import socket
+import threading
+ 
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+WhatServerIp=input('Please input your IP\n')
+
+sock.connect((WhatServerIp, 5650))
+sock.send(b'1')
+print(sock.recv(1024).decode())
+
+def sendThreadFunc():
+    while True:
+        try:
+            myword = input()
+            sock.send(myword.encode())
+        except ConnectionAbortedError:
+            print('Server closed this connection!')
+        except ConnectionResetError:
+            print('Server is closed!')
+    
+def recvThreadFunc():
+    while True:
+        try:
+            otherword = sock.recv(1024)
+            print(otherword.decode())
+            if otherword:
+                print(otherword.decode())
+                sock.shutdown(2)
+                sock.close()
+                break
+            else:
+                break        
+        except ConnectionAbortedError:
+            print('Server closed this connection!')
+            break
+    
+        except ConnectionResetError:
+            print('Server is closed!')
+            break
+ 
+th1 = threading.Thread(target=sendThreadFunc)
+th2 = threading.Thread(target=recvThreadFunc)
+threads = [th1, th2]
+ 
+for t in threads :
+    t.setDaemon(True)
+    t.start()
+t.join()
