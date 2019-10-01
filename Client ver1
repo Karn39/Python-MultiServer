@@ -3,6 +3,7 @@ import threading
  
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 WhatServerIp=input('Please input your IP\n')
+WhatYourName=input('What Your Name?\n')
 
 sock.connect((WhatServerIp, 5650))
 sock.send(b'1')
@@ -12,6 +13,7 @@ def sendThreadFunc():
     while True:
         try:
             myword = input()
+            sock.send(WhatYourName.encode())
             sock.send(myword.encode())
         except ConnectionAbortedError:
             print('Server closed this connection!')
@@ -22,9 +24,9 @@ def recvThreadFunc():
     while True:
         try:
             otherword = sock.recv(1024)
-            print(otherword.decode())
             if otherword:
                 print(otherword.decode())
+            elif otherword == 'quit':
                 sock.shutdown(2)
                 sock.close()
                 break

@@ -1,22 +1,34 @@
 import socket
 import threading
+import feedparser
+#---------標頭
  
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-sock.bind(('10.9.144.166', 5650))
+sock.bind(('127.0.0.1', 5650))
  
 sock.listen(5)
-print('Server', socket.gethostbyname('10.9.144.166'), 'listening ...')
+print('Server', socket.gethostbyname('127.0.0.1'), 'listening ...')
  
 mydict = dict()
 mylist = list()
 
+#-------------------RSS 抓取新聞
+rss_url = 'http://feeds.feedburner.com/cnaFirstNews'
+rss = feedparser.parse(rss_url)
+
+#-------------------函式
+#------------------Server
 def subThreadIn(myconnection, connNumber):
     #mylist.append(myconnection)
     while True:
         try:
-            recvedMsg = myconnection.recv(1024).decode()
-            if recvedMsg=='1010': #password
+            recvedName = myconnection.recv(1024).decode()
+            print('Client Name:'+recvedName)
+            
+            recvedMsg = myconnection.recv(1024).decode()            
+            connection.send(recvedMsg.encode())
+            '''
                 print(recvedMsg)
                 recvedData = myconnection.recv(1024).decode()
                 print(recvedData)
@@ -24,7 +36,8 @@ def subThreadIn(myconnection, connNumber):
                     print('Succuess get')
                     connection.send('Accept'.encode())
             else:
-                sock.send('quit'.encode())
+			'''
+            sock.send('quit'.encode())
         except (OSError, ConnectionResetError):
             try:
                 mylist.remove(myconnection)
@@ -34,7 +47,45 @@ def subThreadIn(myconnection, connNumber):
             myconnection.shutdown(2)
             myconnection.close()
             return
+'''      
+#---------------判斷是否為數字   
+def is_number(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        pass
  
+    try:
+        import unicodedata
+        unicodedata.numeric(s)
+        return True
+    except (TypeError, ValueError):
+        pass
+    return False
+#---------------新聞爬蟲   
+        
+def newsType(newsCommand):
+    content = rss.entries[0]['summary']
+    endLen=content.index('<')
+    newsLast=len(rss['entries'])
+    
+    if newsCommand == "allNews": #今日全新聞標題
+        for i in range(0,newsLast):
+            number="第"+str(i)+"則新聞"
+            connection.send(number.encode())
+            connection.send(rss['entries'][i]['title'].encode())
+    elif newsCommand == "newestNews": #最新新聞標題與內容
+        connection.send(rss['entries'][0]['title'].encode())
+        connection.send(content[0:endLen].encode())
+    else: #第幾則新聞標題與內容
+        content = rss.entries[int(newsCommand)]['summary']
+        endLen=content.index('<')
+        connection.send(rss['entries'][int(newsCommand)]['title'].encode())
+        connection.send(content[0:endLen].encode())            
+'''        
+
+#--------------------主程式
 while True:
     connection, addr = sock.accept()
     print('Accept a new connection', connection.getsockname(), connection.fileno())
@@ -53,3 +104,6 @@ while True:
             connection.close()
     except :  
         pass
+
+
+
